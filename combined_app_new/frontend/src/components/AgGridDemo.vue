@@ -1,8 +1,22 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+
+// import 'ag-grid-community/styles/ag-grid.css'
+// import 'ag-grid-community/styles/ag-theme-alpine.css'
+
+//INTERPRICE
+import { ModuleRegistry, ClientSideRowModelModule } from "ag-grid-community";
+import { AllEnterpriseModule, LicenseManager } from "ag-grid-enterprise";
+import { RowGroupingModule } from '@ag-grid-enterprise/row-grouping';
+
+// import 'ag-grid-enterprise';
+import 'ag-grid-enterprise/styles/ag-grid.css';
+import 'ag-grid-enterprise/styles/ag-theme-alpine.css';
 import { AgGridVue } from 'ag-grid-vue3'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
+// import { RowGroupingModule } from 'ag-grid-enterprise';
+ModuleRegistry.registerModules([AllEnterpriseModule, RowGroupingModule]);
+
+
 import { reportApi } from '../api'
 import { useI18n } from 'vue-i18n'
 
@@ -136,7 +150,7 @@ const baseColumnDefs = [
       return valueA > valueB ? 1 : -1
     }
   },
-  { field: 'tcr', headerName: t('reports.tableColumns.tcr'), editable: (params) => params.data?.id === editingRowId.value, sortable: true, filter: 'agTextColumnFilter', width: 105 },
+  { field: 'tcr', headerName: t('reports.tableColumns.tcr'), rowGroup: true, hide: true, editable: (params) => params.data?.id === editingRowId.value, sortable: true, filter: 'agTextColumnFilter', width: 105 },
   { field: 'nameRETIndex', headerName: t('reports.tableColumns.nameRETIndex'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 105 },
   { field: 'factoryNumber', headerName: t('reports.tableColumns.factoryNumber'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 80 },
   { field: 'repairType', headerName: t('reports.tableColumns.repairType'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 140 },
@@ -176,6 +190,12 @@ const baseColumnDefs = [
   { field: 'responsibleTransfer', headerName: t('reports.tableColumns.responsibleTransfer'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 150 },
   { field: 'destination', headerName: t('reports.tableColumns.destination'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 170 },
   { field: 'comments', headerName: t('reports.tableColumns.comments'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', minWidth: 150 }
+]
+
+const rowData2 = [
+  { id: 1, tcr: 'TCR-001', nameRETIndex: '11'},
+  { id: 2, tcr: 'TCR-002', nameRETIndex: '22'},
+  { id: 3, tcr: 'TCR-002', nameRETIndex: '23'},
 ]
 /*const baseColumnDefs = [
   { 
@@ -773,13 +793,14 @@ const exportCsv = () => {
 
     <!-- AG Grid -->
     <div class="ag-grid-wrapper">
-      <ag-grid-vue
+      <AgGridVue
         class="ag-theme-alpine"
         style="width: 100%; height: 100%;"
         :columnDefs="columnDefsWithHide"
-        :rowData="rowData"
+        :rowData="rowData2"
         :defaultColDef="defaultColDef"        
         rowSelection="single"
+        :groupDefaultExpanded="1"
         :rowDeselection="true"
         :rowMultiSelectWithClick="true"
         :isRowSelectable="isRowSelectable"
