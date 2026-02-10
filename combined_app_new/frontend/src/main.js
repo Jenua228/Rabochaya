@@ -10,13 +10,23 @@ import { createPinia } from 'pinia'
 import { ModuleRegistry } from 'ag-grid-community';
 import { ClientSideRowModelModule } from 'ag-grid-community';
 import { RowGroupingModule } from '@ag-grid-enterprise/row-grouping';
+import { MenuModule } from '@ag-grid-enterprise/menu';
+import { SetFilterModule } from '@ag-grid-enterprise/set-filter';
+import { ColumnsToolPanelModule } from '@ag-grid-enterprise/column-tool-panel';
+import { FiltersToolPanelModule } from '@ag-grid-enterprise/filter-tool-panel';
+import { SideBarModule } from '@ag-grid-enterprise/side-bar';
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
-  RowGroupingModule
+  RowGroupingModule,
+  MenuModule, 
+  SetFilterModule, 
+  ColumnsToolPanelModule, 
+  FiltersToolPanelModule,
+  SideBarModule
 ]);
 // Стили
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'ag-grid-enterprise/styles/ag-grid.css';
+import 'ag-grid-enterprise/styles/ag-theme-alpine.css';
 
 // Импорты AG Grid для Vue 3 и версии 35.x
 import { AgGridVue } from 'ag-grid-vue3';

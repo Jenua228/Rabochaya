@@ -5,12 +5,24 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ModuleRegistry, ClientSideRowModelModule } from "ag-grid-community";
 import { AllEnterpriseModule, LicenseManager } from "ag-grid-enterprise";
 import { RowGroupingModule } from '@ag-grid-enterprise/row-grouping';
+import { MenuModule } from '@ag-grid-enterprise/menu';
+import { SetFilterModule } from '@ag-grid-enterprise/set-filter';
+import { ColumnsToolPanelModule } from '@ag-grid-enterprise/column-tool-panel';
+import { FiltersToolPanelModule } from '@ag-grid-enterprise/filter-tool-panel';
+import { SideBarModule } from '@ag-grid-enterprise/side-bar';
 
 // import 'ag-grid-enterprise';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'ag-grid-enterprise/styles/ag-grid.css';
+import 'ag-grid-enterprise/styles/ag-theme-alpine.css';
 import { AgGridVue } from 'ag-grid-vue3'
-ModuleRegistry.registerModules([AllEnterpriseModule, RowGroupingModule]);
+ModuleRegistry.registerModules([
+  AllEnterpriseModule, 
+  RowGroupingModule, 
+  MenuModule, 
+  SetFilterModule, 
+  ColumnsToolPanelModule, 
+  FiltersToolPanelModule,
+  SideBarModule]);
 
 import { reportApi } from '../api'
 import { useI18n } from 'vue-i18n'
@@ -87,6 +99,7 @@ const selectedRows = ref([])
 const showAddModal = ref(false)
 const showColumnPanel = ref(false)
 const editingRowId = ref(null)
+const showSidePanel = ref(false);
 
 // Функция для проверки, можно ли выбрать строку
 const isRowSelectable = (node) => {
@@ -146,7 +159,17 @@ const baseColumnDefs = [
     }
   },
   { field: 'tcr', headerName: t('reports.tableColumns.tcr'), rowGroup: true, hide: true, editable: (params) => params.data?.id === editingRowId.value, sortable: true, filter: 'agTextColumnFilter', width: 105 },
-  { field: 'nameRETIndex', headerName: t('reports.tableColumns.nameRETIndex'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 105 },
+  { field: 'nameRETIndex', headerName: t('reports.tableColumns.nameRETIndex'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agSetColumnFilter', filterParams: {
+    // Дополнительные параметры
+    //values: ['Electronics', 'Furniture', 'Clothing'], // Можно задать явно
+    debounceMs: 300, // Задержка при вводе
+    buttons: ['apply', 'reset'], // Кнопки
+    excelMode: 'windows', // Режим Excel
+    suppressSorting: false, // Сортировка значений
+    caseSensitive: false, // Регистрозависимость
+    selectAllOnMiniFilter: true // Выделять все при поиске
+  },
+   width: 105 },
   { field: 'factoryNumber', headerName: t('reports.tableColumns.factoryNumber'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 80 },
   { field: 'repairType', headerName: t('reports.tableColumns.repairType'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 140 },
   { field: 'dueDate', headerName: t('reports.tableColumns.dueDate'), editable: (params) => params.data?.id === editingRowId.value, filter: 'agTextColumnFilter', width: 100 },
@@ -291,6 +314,61 @@ const rowData2 = [
   { field: 'destination', headerName: 'Куда направлено № и дата документа', editable: true, filter: 'agTextColumnFilter', minWidth: 200 },
 ]*/
 
+
+const sideBar = ref({
+  toolPanels: [
+    {
+      id: 'columns',
+      labelDefault: 'Колонки',
+      labelKey: 'columns',
+      iconKey: 'columns',
+      toolPanel: 'agColumnsToolPanel',
+      toolPanelParams: {
+        // Настройки панели колонок
+        suppressRowGroups: true,
+        suppressValues: true,
+        suppressPivots: true,
+        suppressColumnFilter: false,
+        suppressColumnSelectAll: false,
+        suppressColumnExpandAll: false
+      }
+    },
+    {
+      id: 'filters',
+      labelDefault: 'Фильтры',
+      labelKey: 'filters',
+      iconKey: 'filter',
+      toolPanel: 'agFiltersToolPanel',
+      toolPanelParams: {
+        // Настройки панели фильтров
+        expandFilters: true,
+        suppressExpandAll: false,
+        suppressFilterSearch: false
+      }
+    }
+  ],
+  position: 'right', // или 'left'
+  defaultToolPanel: 'columns', // Какая панель открыта по умолчанию
+  hiddenByDefault: false // Скрыта по умолчанию
+});
+
+const toggleSidePanel = () => {
+  showSidePanel.value = !showSidePanel.value;
+  
+  // Если панель открывается, закрываем кастомную панель колонок
+  if (showSidePanel.value) {
+    showColumnPanel.value = false;
+  }
+  
+  // Если gridApi уже доступен, можно программно управлять панелью
+  if (gridApi.value) {
+    if (showSidePanel.value) {
+      gridApi.value.openToolPanel('columns'); // Открыть панель колонок по умолчанию
+    } else {
+      gridApi.value.closeToolPanel(); // Закрыть панель
+    }
+  }
+};
 
 // Обработчик кнопки "Просрочено" - toggle (вкл/выкл)
 const handleOverdueClick = async () => {
@@ -525,6 +603,11 @@ const defaultColDef = ref({
   autoHeight: true,
   wrapHeaderText: true,
   autoHeaderHeight: true,
+
+  enableRowGroup: true, // Разрешить группировку через панель
+  enablePivot: true, // Разрешить сводные таблицы
+  enableValue: true, // Разрешить агрегацию
+  allowedAggFuncs: ['sum', 'avg', 'min', 'max', 'count'] 
 })
 
 const toggleEditMode = () => {
@@ -592,7 +675,11 @@ onMounted(async () => {
 })
 
 const onGridReady = (params) => {
-  gridApi.value = params.api
+  gridApi.value = params.api;
+
+  params.api.addEventListener('toolPanelVisibleChanged', (event) => {
+    console.log('Панель инструментов:', event.visible ? 'открыта' : 'закрыта');
+  });
 }
 
 // const onSelectionChanged = () => {
@@ -762,6 +849,14 @@ const exportCsv = () => {
            {{ $t('reports.columns') }}
         </button>
       </div>
+
+        <button 
+          class="btn-secondary" 
+          @click="toggleSidePanel"
+          :class="{ 'btn-active': showSidePanel }"
+        >
+    {{ showSidePanel ? '✕ Панель' : '👁️ Панель' }}
+  </button>
       
       <div class="toolbar-group">
         <input type="text" v-model="searchText" @input="onSearch" :placeholder="$t('reports.searchPlaceholder')" class="search-input">
@@ -803,6 +898,13 @@ const exportCsv = () => {
         :pagination="true"
         :paginationPageSize="10"
         :paginationPageSizeSelector="[5, 10, 25, 50]"
+        :cacheBlockSize="paginationPageSize"
+        :maxBlocksInCache="10"
+        :suppressPaginationPanel="false"
+
+        :sideBar="showSidePanel ? sideBar : false"
+        :suppressDragLeaveHidesColumns="true"
+
         :context="gridContext"
         :getRowStyle="getRowStyle"
         :getRowHeight="getRowHeight"
@@ -1320,6 +1422,108 @@ const exportCsv = () => {
   font-weight: 600 !important;
   text-align: center !important;
   justify-content: center !important;
+}
+
+
+
+/* ===== СТИЛИ ДЛЯ ENTERPRISE ПАНЕЛЕЙ ===== */
+
+/* Боковая панель (Side Bar) */
+.ag-theme-alpine .ag-side-bar {
+  background-color: #ffffff !important;
+  border-left: 1px solid #dde2eb !important;
+}
+
+/* Панель инструментов (колонки, фильтры) */
+.ag-theme-alpine .ag-tool-panel-wrapper {
+  background-color: #ffffff !important;
+}
+
+/* Заголовки панелей */
+.ag-theme-alpine .ag-column-panel,
+.ag-theme-alpine .ag-filter-toolpanel {
+  background-color: #ffffff !important;
+}
+
+/* Текст в панелях */
+.ag-theme-alpine .ag-tool-panel-wrapper,
+.ag-theme-alpine .ag-column-select-header,
+.ag-theme-alpine .ag-column-select-column,
+.ag-theme-alpine .ag-column-select-column-group,
+.ag-theme-alpine .ag-filter-toolpanel-header,
+.ag-theme-alpine .ag-filter-toolpanel-group-title {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* Контекстное меню (правый клик) */
+.ag-theme-alpine .ag-menu {
+  background-color: #ffffff !important;
+  border: 1px solid #dde2eb !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ag-theme-alpine .ag-menu-option {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.ag-theme-alpine .ag-menu-option:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.ag-theme-alpine .ag-menu-option-text {
+  color: #1e293b !important;
+}
+
+/* Set Filter (фильтр с чекбоксами) */
+.ag-theme-alpine .ag-set-filter-list {
+  background-color: #ffffff !important;
+}
+
+.ag-theme-alpine .ag-set-filter-item {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.ag-theme-alpine .ag-filter {
+  background-color: #ffffff !important;
+}
+
+.ag-theme-alpine .ag-filter-body-wrapper {
+  background-color: #ffffff !important;
+}
+
+/* Popup для фильтров */
+.ag-theme-alpine .ag-popup-child {
+  background-color: #ffffff !important;
+}
+
+/* Кнопки в панелях */
+.ag-theme-alpine .ag-side-button-button {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+}
+
+.ag-theme-alpine .ag-side-button-button:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine .ag-selected .ag-side-button-button {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+/* Иконки в панелях */
+.ag-theme-alpine .ag-icon {
+  color: #475569 !important;
+}
+
+/* Поле поиска в фильтрах */
+.ag-theme-alpine .ag-mini-filter input {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #dde2eb !important;
 }
 
 </style>

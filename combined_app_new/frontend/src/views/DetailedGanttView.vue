@@ -121,7 +121,7 @@ const { t } = useI18n()
 const isShow = ref(true)
 
 // Русская локализация фильтров
-const localeRu = {
+const localeRu = computed(()  => ({
   // Фильтры
   contains: t('agGrid.contains'),
   notContains: t('agGrid.notContains'),
@@ -149,10 +149,38 @@ const localeRu = {
   resetFilter: t('agGrid.resetFilter'),
   clearFilter: t('agGrid.clearFilter'),
   
+  // Пагинация
+  page: t('agGrid.page'),
+  more: t('agGrid.more'),
+  of: t('agGrid.of'),
+  to: t('agGrid.to'),
+  nextPage: t('agGrid.nextPage'),
+  previousPage: t('agGrid.previousPage'),
+  firstPage: t('agGrid.firstPage'),
+  lastPage: t('agGrid.lastPage'),
+  pageSize: t('agGrid.pageSize'),
+  pageSizeSelectorLabel: t('agGrid.pageSizeSelectorLabel'),
+  
+  // Выделение
+  selectAll: t('agGrid.selectAll'),
+  selectAllSearchResults: t('agGrid.selectAllSearchResults'),
+  searchOoo: t('agGrid.searchOoo'),
+  noMatches: t('agGrid.noMatches'),
+  
   // Прочее
   noRowsToShow: t('agGrid.noRowsToShow'),
-    loading: t('agGrid.loading')
-}
+  loading: t('agGrid.loading'),
+  pinColumn: t('agGrid.pinColumn'),
+  autosizeThiscolumn: t('agGrid.autosizeThiscolumn'),
+  autosizeAllColumns: t('agGrid.autosizeAllColumns'),
+  resetColumns: t('agGrid.resetColumns'),
+  copy: t('agGrid.copy'),
+  copyWithHeaders: t('agGrid.copyWithHeaders'),
+  paste: t('agGrid.paste'),
+  export: t('agGrid.export'),
+  csvExport: t('agGrid.csvExport'),
+  excelExport: t('agGrid.excelExport'),
+}))
 
 const props = defineProps({
   reportId: { type: Number, required: true },
