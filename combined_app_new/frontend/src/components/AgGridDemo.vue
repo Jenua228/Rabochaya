@@ -1,21 +1,16 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 
-// import 'ag-grid-community/styles/ag-grid.css'
-// import 'ag-grid-community/styles/ag-theme-alpine.css'
-
 //INTERPRICE
 import { ModuleRegistry, ClientSideRowModelModule } from "ag-grid-community";
 import { AllEnterpriseModule, LicenseManager } from "ag-grid-enterprise";
 import { RowGroupingModule } from '@ag-grid-enterprise/row-grouping';
 
 // import 'ag-grid-enterprise';
-import 'ag-grid-enterprise/styles/ag-grid.css';
-import 'ag-grid-enterprise/styles/ag-theme-alpine.css';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { AgGridVue } from 'ag-grid-vue3'
-// import { RowGroupingModule } from 'ag-grid-enterprise';
 ModuleRegistry.registerModules([AllEnterpriseModule, RowGroupingModule]);
-
 
 import { reportApi } from '../api'
 import { useI18n } from 'vue-i18n'
@@ -137,7 +132,7 @@ const baseColumnDefs = [
   { 
     field: 'id', 
     headerName: t('reports.tableColumns.id'), 
-    width: 50,
+    width: 90,
     minWidth: 70,
     //headerCheckboxSelection: true,
     filter: 'agTextColumnFilter',
@@ -793,11 +788,11 @@ const exportCsv = () => {
 
     <!-- AG Grid -->
     <div class="ag-grid-wrapper">
-      <AgGridVue
+      <ag-grid-vue
         class="ag-theme-alpine"
         style="width: 100%; height: 100%;"
         :columnDefs="columnDefsWithHide"
-        :rowData="rowData2"
+        :rowData="rowData"
         :defaultColDef="defaultColDef"        
         rowSelection="single"
         :groupDefaultExpanded="1"

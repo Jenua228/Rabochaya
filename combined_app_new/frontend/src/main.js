@@ -6,8 +6,6 @@ import './styles/main.css'
 // import 'ag-grid-community/styles/ag-theme-alpine.css'
 import { createPinia } from 'pinia'
 
-
-
 // import 'ag-grid-enterprise';
 import { ModuleRegistry } from 'ag-grid-community';
 import { ClientSideRowModelModule } from 'ag-grid-community';
